@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 다른 앱(한컴오피스·PDF 보기·공유)에 넘길 수 있는 폴더 -->
+<paths>
+    <files-path name="exports" path="exports/"/>
+    <files-path name="library" path="library/"/>
+    <cache-path name="update" path="update/"/>
+    <cache-path name="picked" path="picked/"/>
+</paths>

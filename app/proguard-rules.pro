@@ -1,0 +1,24 @@
+# kotlinx.serialization
+-keepattributes *Annotation*, InnerClasses, Signature, Exceptions
+-dontnote kotlinx.serialization.**
+-keepclassmembers class kotlinx.serialization.json.** { *** Companion; }
+-keepclasseswithmembers class kotlinx.serialization.json.** { kotlinx.serialization.KSerializer serializer(...); }
+-keep,includedescriptorclasses class io.github.hdlee73.fsshelper.**$$serializer { *; }
+-keepclassmembers class io.github.hdlee73.fsshelper.** { *** Companion; }
+-keepclasseswithmembers class io.github.hdlee73.fsshelper.** { kotlinx.serialization.KSerializer serializer(...); }
+# Retrofit / OkHttp (law-core)
+-keepattributes RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations, AnnotationDefault
+-keep,allowobfuscation interface com.hdlee73.everylaw.core.data.remote.** { *; }
+-keepclassmembers,allowshrinking,allowobfuscation interface * { @retrofit2.http.* <methods>; }
+-dontwarn org.codehaus.mojo.animal_sniffer.*
+-dontwarn javax.annotation.**
+-dontwarn kotlin.Unit
+-dontwarn retrofit2.KotlinExtensions*
+-dontwarn okhttp3.internal.platform.**
+-dontwarn org.conscrypt.**
+-dontwarn org.bouncycastle.**
+-dontwarn org.openjsse.**
+-if interface * { @retrofit2.http.* <methods>; }
+-keep,allowobfuscation interface <1>
+-keep,allowobfuscation,allowshrinking class kotlin.coroutines.Continuation
+-keep,allowobfuscation,allowshrinking class retrofit2.Response

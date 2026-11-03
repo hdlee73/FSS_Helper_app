@@ -1,0 +1,18 @@
+.gradle/
+build/
+*/build/
+.idea/
+*.iml
+local.properties
+.kotlin/
+out/
+# 서명 키는 절대 커밋하지 않는다 (GitHub Secrets에만 둔다)
+*.pem
+signing/
+*.jks
+*.keystore
+# 매뉴얼·서식 원문(평문)은 절대 커밋하지 않는다. 암호화된 secure/library.bin 만 올린다.
+secure/plain/
+*.hwp
+*.hwpx
+__pycache__/

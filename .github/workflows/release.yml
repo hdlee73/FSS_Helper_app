@@ -1,0 +1,59 @@
+name: release
+
+# 저장소 주인이 v* 태그를 올릴 때만 배포한다. 배포 APK는 Secrets의 비공개 서명 키로만 서명되며,
+# 키가 없으면 실패한다(다른 사람이 만든 APK는 서명이 달라 기존 앱 위에 업데이트로 설치되지 않는다).
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    # 포크에서는 실행하지 않는다.
+    if: github.repository == 'hdlee73/FSS_Helper_app'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: 서명 키 확인
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          LIBRARY_KEY: ${{ secrets.LIBRARY_KEY }}
+        run: |
+          if [ -z "$RELEASE_KEYSTORE_BASE64" ]; then echo "::error::RELEASE_KEYSTORE_BASE64 시크릿이 없습니다."; exit 1; fi
+          if [ -z "$LIBRARY_KEY" ]; then echo "::error::LIBRARY_KEY 시크릿이 없습니다(매뉴얼·서식을 열 수 없음)."; exit 1; fi
+          echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          echo "RELEASE_KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+
+      - name: 배포 APK 빌드
+        env:
+          LAW_OC: ${{ secrets.LAW_OC }}
+          DART_API_KEY: ${{ secrets.DART_API_KEY }}
+          LIBRARY_KEY: ${{ secrets.LIBRARY_KEY }}
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          V="${GITHUB_REF_NAME#v}"
+          ./gradlew --no-daemon -PappVersion="$V" :law-core:test :app:assembleRelease
+          cp app/build/outputs/apk/release/app-release.apk "FSS_Helper-$V.apk"
+          # 디버그 키로 서명됐으면 배포하지 않는다.
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "FSS_Helper-$V.apk" | tee certs.txt
+          if grep -q "CN=Android Debug" certs.txt; then echo "::error::디버그 키로 서명됨"; exit 1; fi
+
+      - name: 서명 키 지우기
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.jks"
+
+      - name: GitHub 릴리스
+        uses: softprops/action-gh-release@v2
+        with:
+          files: FSS_Helper-*.apk
+          generate_release_notes: true
