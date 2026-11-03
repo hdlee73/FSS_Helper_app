@@ -238,11 +238,50 @@ object Os {
         else -> "application/octet-stream"
     }
 
-    /** 파일을 다른 앱(한컴오피스, PDF 보기 등)으로 연다. 열 앱이 없으면 공유 창을 띄운다. */
+    /** 한글 문서를 받을 수 있는 앱마다 쓰는 MIME이 달라서(한컴오피스, 이음오피스, 폴라리스 등) 여러 개를 함께 찾는다. */
+    private val HWP_MIMES = listOf(
+        "application/x-hwp", "application/haansofthwp", "application/vnd.hancom.hwp",
+        "application/hwp", "application/hwp+zip", "application/vnd.hancom.hwpx", "application/haansofthwpx",
+    )
+
+    private fun candidateMimes(file: File): List<String> = when (file.extension.lowercase()) {
+        "hwp", "hwpx" -> listOf(mimeOf(file)) + HWP_MIMES + "application/octet-stream"
+        else -> listOf(mimeOf(file))
+    }.distinct()
+
+    /** 이 파일을 열 수 있는 앱 수(설치된 문서 앱 확인용) */
+    fun viewerCount(file: File): Int = viewIntents(file).size
+
+    private fun viewIntents(file: File): List<Intent> {
+        val pm = ctx.packageManager
+        val uri = uriOf(file)
+        val seen = LinkedHashMap<String, Intent>()
+        for (mime in candidateMimes(file)) {
+            val base = Intent(Intent.ACTION_VIEW).setDataAndType(uri, mime)
+            @Suppress("DEPRECATION")
+            val acts = runCatching { pm.queryIntentActivities(base, 0) }.getOrDefault(emptyList())
+            for (ri in acts) {
+                val pkg = ri.activityInfo.packageName
+                if (pkg == ctx.packageName || pkg in seen) continue
+                seen[pkg] = Intent(base).setClassName(pkg, ri.activityInfo.name)
+                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+        }
+        return seen.values.toList()
+    }
+
+    /**
+     * 파일을 다른 앱으로 연다. 한글(HWP/HWPX)은 한컴오피스·이음오피스·폴라리스 오피스 등
+     * 설치된 호환 앱을 모두 찾아 고르게 한다. 열 앱이 없으면 false.
+     */
     fun open(file: File): Boolean = runCatching {
-        val i = Intent(Intent.ACTION_VIEW).setDataAndType(uriOf(file), mimeOf(file))
-            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-        ctx.startActivity(Intent.createChooser(i, file.name).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        val targets = viewIntents(file)
+        if (targets.isEmpty()) return@runCatching false
+        val intent = if (targets.size == 1) targets[0]
+        else Intent.createChooser(targets[0], file.name)
+            .putExtra(Intent.EXTRA_INITIAL_INTENTS, targets.drop(1).toTypedArray())
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        ctx.startActivity(intent)
         true
     }.getOrDefault(false)
 

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import io.github.hdlee73.fsshelper.ui.NavyBand
 
@@ -69,7 +70,7 @@ import java.time.format.DateTimeFormatter
 data class HomeBadges(val counts: Map<Dest, String> = emptyMap())
 
 /**
- * 시안 3(네이비 공문): 남색 머리띠 안에 인사와 통합 검색, 아래에 도구 카드 2열, 최근 사용 목록.
+ * 홈: 법령 검색 한 칸과 최근 사용 목록만 둔다(메뉴는 위쪽 탭).
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -80,35 +81,27 @@ fun HomeScreen(recents: RecentStore, badges: HomeBadges, onTool: (Dest) -> Unit,
     var query by remember { mutableStateOf("") }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
         item {
-            Column(
-                Modifier.fillMaxWidth().background(NavyBand).padding(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Text("검사업무 도우미", style = MaterialTheme.typography.titleLarge, color = Color.White)
-                Text("법령은 '은행법 제34조', 기업은 '기업 개황'에서 찾습니다.", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.72f))
+            Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("무엇을 찾으세요?", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
                 SearchField(query, { query = it }, { if (query.isNotBlank()) onSearch(query.trim()) }, "법령 검색 (예: 자본시장법 제54조)", Modifier.fillMaxWidth())
+                Text("위쪽 탭을 옆으로 밀면 모든 메뉴가 있습니다.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         item {
-            Column(Modifier.padding(horizontal = 12.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Dest.tools.chunked(2).forEach { row ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        row.forEach { d -> ToolCard(d, badges.counts[d], Modifier.weight(1f)) { onTool(d) } }
-                        repeat(2 - row.size) { Spacer(Modifier.weight(1f)) }
-                    }
-                }
-            }
-        }
-        item {
-            Text("최근 사용", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 16.dp, top = 4.dp, bottom = 6.dp))
+            Text("최근 사용", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp))
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                val labels = listOf("전체") + RecentKind.entries.map { it.label } + "즐겨찾기"
+                val labels = listOf("전체") + RecentKind.entries.map { it.label } + "★ 즐겨찾기"
                 val sel = when { starredOnly -> RecentKind.entries.size + 1; tab == null -> 0; else -> RecentKind.entries.indexOf(tab) + 1 }
                 labels.forEachIndexed { i, l ->
                     FilterChip(selected = i == sel, onClick = {
                         starredOnly = i == RecentKind.entries.size + 1
                         tab = if (i in 1..RecentKind.entries.size) RecentKind.entries[i - 1] else null
-                    }, label = { Text(l) })
+                    }, label = { Text(l) }, border = null,
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                        ))
                 }
             }
         }
@@ -117,18 +110,18 @@ fun HomeScreen(recents: RecentStore, badges: HomeBadges, onTool: (Dest) -> Unit,
             .filter { !starredOnly || it.starred }
         item {
             Surface(
-                shape = MaterialTheme.shapes.small, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
+                shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surface,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
             ) {
                 Column {
                     if (items.isEmpty()) {
                         Text(
-                            if (data.items.isEmpty()) "아직 사용한 것이 없습니다. 위 도구에서 서식·매뉴얼·법령·기업을 열면 여기에 쌓입니다." else "조건에 맞는 항목이 없습니다.",
+                            if (data.items.isEmpty()) "아직 사용한 것이 없습니다. 서식·매뉴얼·법령·기업을 열면 여기에 쌓입니다." else "조건에 맞는 항목이 없습니다.",
                             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(16.dp),
                         )
                     }
                     items.take(40).forEachIndexed { i, r ->
-                        if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        if (i > 0) HorizontalDivider(Modifier.padding(start = 52.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
                         RecentRow(r, recents, onRecent)
                     }
                 }
@@ -143,35 +136,12 @@ fun HomeScreen(recents: RecentStore, badges: HomeBadges, onTool: (Dest) -> Unit,
     }
 }
 
+/** 옅은 남색 바탕의 도구 그림(한 가지 색으로 차분하게) */
 @Composable
-private fun ToolCard(d: Dest, badge: String?, modifier: Modifier, onClick: () -> Unit) {
-    Surface(
-        shape = MaterialTheme.shapes.small,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        color = MaterialTheme.colorScheme.surface,
-        modifier = modifier.height(72.dp).clip(MaterialTheme.shapes.small).clickable(onClick = onClick),
-    ) {
-        Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            ToolGlyph(d.icon, d.tint, 32)
-            Column(Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(d.label, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-                    if (badge != null) Box(Modifier.background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(4.dp)).padding(horizontal = 4.dp)) {
-                        Text(badge, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer, maxLines = 1)
-                    }
-                }
-                Text(d.hint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-        }
-    }
-}
-
-/** 옅은 바탕에 왼쪽 색 띠와 도구 그림 */
-@Composable
-fun ToolGlyph(icon: ImageVector, tint: Color, size: Int = 30) {
-    Box(Modifier.size(size.dp).clip(RoundedCornerShape(6.dp)).background(tint.copy(alpha = 0.12f))) {
-        Box(Modifier.width(3.dp).fillMaxHeight().background(tint))
-        Icon(icon, null, tint = tint, modifier = Modifier.align(Alignment.Center).padding(start = 2.dp).size((size * 0.58f).dp))
+fun ToolGlyph(icon: ImageVector, @Suppress("UNUSED_PARAMETER") tint: Color, size: Int = 30) {
+    val c = MaterialTheme.colorScheme.primary
+    Box(Modifier.size(size.dp).clip(RoundedCornerShape((size / 3).dp)).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
+        Icon(icon, null, tint = c, modifier = Modifier.size((size * 0.56f).dp))
     }
 }
 

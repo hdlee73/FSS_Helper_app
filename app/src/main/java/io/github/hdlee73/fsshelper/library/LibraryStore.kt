@@ -33,7 +33,7 @@ data class PageSpan(val start: Int, val end: Int) {
 }
 
 /**
- * 앱에 들어 있는 검사매뉴얼·검사관련 서식. 저장소와 APK에는 암호화한 묶음(assets/library.bin)만 있고,
+ * 앱에 들어 있는 검사품질관리 매뉴얼·검사관련 서식. 저장소와 APK에는 암호화한 묶음(assets/library.bin)만 있고,
  * 처음 열 때 빌드에 넣은 열쇠(GitHub Secret LIBRARY_KEY)로 풀어 앱 전용 저장소에 둔다.
  * 묶음 안 파일 경로는 상대 이름이며, 풀 때 이 기기의 실제 경로로 바꾼다.
  */

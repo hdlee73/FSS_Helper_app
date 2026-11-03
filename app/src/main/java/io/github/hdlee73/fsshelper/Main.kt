@@ -33,15 +33,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.Menu
-import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalDrawerSheet
-import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
@@ -50,7 +50,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -103,7 +102,6 @@ import io.github.hdlee73.fsshelper.todo.TodoScreen
 import io.github.hdlee73.fsshelper.todo.TodoStore
 import io.github.hdlee73.fsshelper.ui.AppTheme
 import io.github.hdlee73.fsshelper.ui.Dest
-import io.github.hdlee73.fsshelper.ui.NavGroup
 import io.github.hdlee73.fsshelper.ui.NavyBand
 import io.github.hdlee73.fsshelper.ui.Navigator
 import io.github.hdlee73.fsshelper.ui.Os
@@ -157,7 +155,7 @@ class AppGraph {
 
     val libraryActions = LibraryActions(
         writeForm = this::writeForm,
-        openedManual = { title, page -> recents.touch(RecentKind.MANUAL, title, page.toString(), "검사매뉴얼 ${page + 1}쪽") },
+        openedManual = { title, page -> recents.touch(RecentKind.MANUAL, title, page.toString(), "검사품질관리 매뉴얼 ${page + 1}쪽") },
         openedForm = { no -> FormCatalog.form(no).let { f -> recents.touch(RecentKind.FORM, f.label.trim(), no, "검사관련 서식") } },
         message = this::message,
     )
@@ -186,7 +184,7 @@ class AppGraph {
     }
 
     /**
-     * 서식을 한글 앱(한컴오피스 Viewer 등)으로 연다. 휴대폰에서는 서식 한 개만 잘라 낼 수 없어
+     * 서식을 한글 호환 앱(한컴오피스, 이음오피스, 폴라리스 오피스 등)으로 연다. 휴대폰에서는 서식 한 개만 잘라 낼 수 없어
      * 서식 전체 원본을 열고, 찾을 서식 번호를 알려 준다.
      */
     fun writeForm(no: String) {
@@ -194,8 +192,8 @@ class AppGraph {
             val src = withContext(Dispatchers.IO) { library.formsHwp() }
             if (src == null) { message("서식 한글 원본이 앱에 들어 있지 않습니다."); return@launch }
             val form = FormCatalog.form(no)
-            if (Os.open(src)) message("한글 앱에서 '제${no}호'를 찾아 쓰세요. (${form.label.trim()})")
-            else message("한글 파일을 열 앱이 없습니다. Play 스토어에서 '한컴오피스 Viewer'를 설치해 주세요.")
+            if (Os.open(src)) message("문서 앱에서 '제${no}호'를 찾아 쓰세요. (${form.label.trim()})")
+            else message("한글 파일을 열 앱이 없습니다. 한컴오피스, 폴라리스 오피스 같은 문서 앱을 설치해 주세요.")
         }
     }
 
@@ -287,8 +285,6 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun Shell(g: AppGraph) {
     val snackbar = remember { SnackbarHostState() }
-    val drawer = rememberDrawerState(DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
     var lastBackAt by remember { mutableStateOf(0L) }
     val ctx = androidx.compose.ui.platform.LocalContext.current
     LaunchedEffect(Unit) {
@@ -297,53 +293,93 @@ private fun Shell(g: AppGraph) {
             launch { snackbar.showSnackbar(m) }
         }
     }
-    // 뒤로가기(버튼·제스처): 메뉴가 열려 있으면 닫고, 화면 안 단계 → 직전 화면 순서로 되돌린다.
+    // 뒤로가기(버튼·제스처): 화면 안 단계 → 직전 화면 순서로 되돌린다.
     // 홈에서 더 갈 곳이 없으면 바로 끄지 않고 한 번 더 누를 때 끈다.
     BackHandler {
         when {
-            drawer.isOpen -> scope.launch { drawer.close() }
             g.nav.back() -> Unit
             System.currentTimeMillis() - lastBackAt < 2000 -> (ctx as? ComponentActivity)?.finish()
             else -> { lastBackAt = System.currentTimeMillis(); Toast.makeText(ctx, "한 번 더 누르면 앱을 닫습니다.", Toast.LENGTH_SHORT).show() }
         }
     }
-    ModalNavigationDrawer(
-        drawerState = drawer,
-        drawerContent = {
-            DrawerContent(g) { d -> g.nav.go(d); scope.launch { drawer.close() } }
-        },
-    ) {
-        Scaffold(
-            topBar = { AppBar(g) { scope.launch { drawer.open() } } },
-            snackbarHost = { SnackbarHost(snackbar) { Snackbar(it) } },
-            containerColor = MaterialTheme.colorScheme.background,
-            contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        ) { pad ->
-            Box(Modifier.padding(pad).fillMaxSize().imePadding()) { Content(g) }
-        }
+    Scaffold(
+        topBar = { Column { AppBar(g); MenuTabs(g) } },
+        snackbarHost = { SnackbarHost(snackbar) { Snackbar(it) } },
+        containerColor = MaterialTheme.colorScheme.background,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+    ) { pad ->
+        Box(Modifier.padding(pad).fillMaxSize().imePadding()) { Content(g) }
     }
 }
 
-/** 남색 앱 막대: 메뉴 열기, 지금 화면 이름, (홈이 아니면) 뒤로 */
+/** 남색 앱 막대: (뒤로) 로고·앱 이름, 새 버전 알림 */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AppBar(g: AppGraph, onMenu: () -> Unit) {
+private fun AppBar(g: AppGraph) {
     val update by g.update.state.collectAsState()
     val d = g.nav.current
     TopAppBar(
-        title = { Text(if (d == Dest.HOME) "FSS_Helper" else d.label, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-        navigationIcon = { IconButton(onClick = onMenu) { Icon(Icons.Outlined.Menu, "메뉴 열기") } },
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("FSS_Helper", fontWeight = FontWeight.Bold, maxLines = 1)
+                Text("검사업무 도우미", style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = 0.6f), modifier = Modifier.padding(start = 8.dp), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        },
+        navigationIcon = {
+            if (g.nav.canGoBack && d != Dest.HOME) IconButton(onClick = { g.nav.back() }) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "뒤로") }
+            else Image(painterResource(R.drawable.app_logo), null, Modifier.padding(start = 14.dp, end = 4.dp).size(28.dp).clip(RoundedCornerShape(7.dp)))
+        },
         actions = {
             if (update is UpdateState.Available || update is UpdateState.Ready) {
                 TextButton(onClick = { g.nav.go(Dest.ABOUT) }) { Text("새 버전", color = Color(0xFFFFD166)) }
             }
-            if (g.nav.canGoBack && d != Dest.HOME) IconButton(onClick = { g.nav.back() }) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "뒤로") }
         },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = NavyBand, titleContentColor = Color.White,
             navigationIconContentColor = Color.White, actionIconContentColor = Color.White,
         ),
     )
+}
+
+/** 모든 메뉴를 위쪽 탭으로(옆으로 밀어 넘김). 고른 탭은 흰 글자와 밑줄, 나머지는 옅은 글자 */
+@Composable
+private fun MenuTabs(g: AppGraph) {
+    val todo by g.todo.data.collectAsState()
+    val saved by g.dart.saved.collectAsState()
+    val openTodo = todo.items.count { !it.done }
+    val newFilings = saved.newCount.values.sum()
+    val tabs = Dest.entries
+    val idx = tabs.indexOf(g.nav.current)
+    ScrollableTabRow(
+        selectedTabIndex = idx,
+        containerColor = NavyBand,
+        contentColor = Color.White,
+        edgePadding = 8.dp,
+        divider = {},
+        indicator = { pos ->
+            if (idx in pos.indices) TabRowDefaults.SecondaryIndicator(Modifier.tabIndicatorOffset(pos[idx]), height = 3.dp, color = Color.White)
+        },
+    ) {
+        tabs.forEach { d ->
+            val count = when (d) {
+                Dest.TODO -> openTodo.takeIf { it > 0 }
+                Dest.DART -> newFilings.takeIf { it > 0 }
+                else -> null
+            }
+            Tab(
+                selected = d == g.nav.current,
+                onClick = { g.nav.go(d) },
+                selectedContentColor = Color.White,
+                unselectedContentColor = Color.White.copy(alpha = 0.62f),
+                text = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(d.tab, style = MaterialTheme.typography.titleSmall, fontWeight = if (d == g.nav.current) FontWeight.Bold else FontWeight.Medium, maxLines = 1)
+                        if (count != null) Text(" $count", style = MaterialTheme.typography.labelMedium, color = Color(0xFFFFD166), fontWeight = FontWeight.Bold)
+                    }
+                },
+            )
+        }
+    }
 }
 
 @Composable
@@ -379,66 +415,6 @@ private fun Content(g: AppGraph) {
                 onSave = { g.settings.setLawOc(it); g.regulation.ensure(force = true); g.message("법령 OC를 저장했습니다.") }, onTest = { testLaw(g.law) }, onDismiss = { g.keyGuide = null })
             KeyKind.DART -> KeyGuideDialog(kind, g.settings, g.settings.userDartKey,
                 onSave = { g.settings.setDartKey(it); g.dart.ensureIndex(force = true); g.message("DART 인증키를 저장했습니다. 회사 목록을 받아 옵니다.") }, onTest = { testDart(g.dart) }, onDismiss = { g.keyGuide = null })
-        }
-    }
-}
-
-/** 왼쪽 메뉴(시안 3: 남색 바탕, 흰 글자, 고른 줄은 밝은 남색 칩) */
-@Composable
-private fun DrawerContent(g: AppGraph, onGo: (Dest) -> Unit) {
-    val todo by g.todo.data.collectAsState()
-    val saved by g.dart.saved.collectAsState()
-    val update by g.update.state.collectAsState()
-    val openTodo = todo.items.count { !it.done }
-    val newFilings = saved.newCount.values.sum()
-    ModalDrawerSheet(drawerContainerColor = NavyBand, drawerContentColor = Color.White, modifier = Modifier.width(284.dp)) {
-        Column(Modifier.fillMaxHeight().statusBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 12.dp)) {
-            Row(Modifier.fillMaxWidth().height(52.dp).padding(start = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                Image(painterResource(R.drawable.app_logo), null, Modifier.size(30.dp).clip(RoundedCornerShape(7.dp)))
-                Text("FSS_Helper", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.padding(start = 10.dp))
-                Text("v${BuildInfo.VERSION}", style = MaterialTheme.typography.labelSmall, color = DrawerMuted, modifier = Modifier.padding(start = 8.dp))
-            }
-            var lastGroup: NavGroup? = null
-            Dest.entries.filter { !it.lower }.forEach { d ->
-                if (d.group != lastGroup && d.group.title.isNotBlank()) {
-                    Text(d.group.title, style = MaterialTheme.typography.labelSmall, color = DrawerMuted, modifier = Modifier.padding(start = 12.dp, top = 14.dp, bottom = 4.dp))
-                }
-                lastGroup = d.group
-                val count = when (d) {
-                    Dest.TODO -> openTodo.takeIf { it > 0 }?.toString()
-                    Dest.DART -> newFilings.takeIf { it > 0 }?.toString()
-                    else -> null
-                }
-                DrawerItem(d, g.nav.current == d, count) { onGo(d) }
-            }
-            Spacer(Modifier.height(10.dp))
-            HorizontalDivider(Modifier.padding(vertical = 6.dp), color = Color.White.copy(alpha = 0.14f))
-            Dest.entries.filter { it.lower }.forEach { d ->
-                val badge = if (d == Dest.ABOUT && (update is UpdateState.Available || update is UpdateState.Ready)) "N" else null
-                DrawerItem(d, g.nav.current == d, badge) { onGo(d) }
-            }
-            Spacer(Modifier.height(8.dp))
-            Text("이현덕 with Claude", style = MaterialTheme.typography.labelSmall, color = DrawerMuted, modifier = Modifier.padding(start = 12.dp))
-        }
-    }
-}
-
-private val DrawerMuted = Color(0xFF8C9AB5)
-
-@Composable
-private fun DrawerItem(d: Dest, selected: Boolean, count: String?, onClick: () -> Unit) {
-    val bg = if (selected) Color(0xFF2F4B82) else Color.Transparent
-    Row(
-        Modifier.fillMaxWidth().height(46.dp).clip(RoundedCornerShape(6.dp)).background(bg).clickable(onClick = onClick).padding(horizontal = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        Box(Modifier.size(22.dp).clip(RoundedCornerShape(5.dp)).background(if (d.group == NavGroup.HOME || d.lower) Color.White.copy(alpha = 0.12f) else d.tint), contentAlignment = Alignment.Center) {
-            Icon(d.icon, null, Modifier.size(15.dp), tint = Color.White)
-        }
-        Text(d.label, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal, color = Color.White)
-        if (count != null) Box(Modifier.clip(RoundedCornerShape(50)).background(Color(0xFFFFD166)).padding(horizontal = 7.dp)) {
-            Text(count, style = MaterialTheme.typography.labelSmall, color = Color(0xFF1B2B4B), fontWeight = FontWeight.Bold)
         }
     }
 }

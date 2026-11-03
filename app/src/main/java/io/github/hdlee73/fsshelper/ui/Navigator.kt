@@ -22,11 +22,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 /** 메뉴 묶음: 홈, 자료(매뉴얼·서식), 검색, 제재 기준, 할 일, 아래쪽(설정·앱 정보) */
 enum class NavGroup(val title: String) { HOME(""), DOCS("검사 자료"), SEARCH("검색"), CRITERIA("제재 기준"), WORK("내 일"), LOWER("") }
 
-/** 왼쪽 메뉴의 목적지. [tint]는 홈 카드·목록 아이콘에 쓰는 도구 고유 색 */
+/** 위쪽 탭의 목적지. [tint]는 예전 도구 고유 색(지금은 화면을 차분하게 하려고 쓰지 않음) */
 enum class Dest(val label: String, val icon: ImageVector, val group: NavGroup, val tint: Color = Color(0xFF6B6D7A), val hint: String = "") {
     HOME("홈", Icons.Outlined.Home, NavGroup.HOME),
-    MANUAL("검사매뉴얼", Icons.AutoMirrored.Outlined.MenuBook, NavGroup.DOCS, Color(0xFF4F46E5), "원본 모양(PDF)으로 보기"),
-    FORMS("검사관련 서식", Icons.Outlined.Description, NavGroup.DOCS, Color(0xFF2563EB), "원본 보기 · 한글로 작성"),
+    MANUAL("검사품질관리 매뉴얼", Icons.AutoMirrored.Outlined.MenuBook, NavGroup.DOCS, Color(0xFF4F46E5), "원본 모양(PDF)으로 보기"),
+    FORMS("검사관련 서식", Icons.Outlined.Description, NavGroup.DOCS, Color(0xFF2563EB), "원본 보기 · 문서 앱으로 작성"),
     LAW("법률 검색", Icons.Outlined.ManageSearch, NavGroup.SEARCH, Color(0xFF0F766E), "항·호·목별 위임 법규"),
     DART("기업 개황", Icons.Outlined.Business, NavGroup.SEARCH, Color(0xFF0E7490), "개황·주주·재무·공시"),
     LEVEL("양정기준", Icons.Outlined.Gavel, NavGroup.CRITERIA, Color(0xFF7C3AED), "임원·직원·기관 제재 수준"),
@@ -38,6 +38,18 @@ enum class Dest(val label: String, val icon: ImageVector, val group: NavGroup, v
     ;
 
     val lower: Boolean get() = group == NavGroup.LOWER
+
+    /** 위쪽 탭에 쓰는 짧은 이름 */
+    val tab: String get() = when (this) {
+        MANUAL -> "품질관리 매뉴얼"
+        FORMS -> "서식"
+        LAW -> "법률"
+        DART -> "기업"
+        LEVEL -> "양정"
+        PENALTY -> "과징금"
+        FINE -> "과태료"
+        else -> label
+    }
 
     companion object {
         /** 홈 화면 카드로 보여 주는 도구 */

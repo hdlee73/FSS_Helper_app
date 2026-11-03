@@ -49,8 +49,8 @@ const val AUTHOR_HOME = "https://hdlee73.github.io/Home/"
 private val GUIDE = listOf(
     "메뉴와 뒤로가기" to "왼쪽 위 ☰ 또는 화면 왼쪽 끝에서 밀면 메뉴가 열립니다. 뒤로가기 버튼·제스처는 앱을 끄지 않고 직전 화면(또는 화면 안의 이전 단계)으로 돌아갑니다. 홈에서 두 번 누르면 앱을 닫습니다.",
     "홈" to "남색 머리띠의 검색창에 '은행법 제34조'처럼 적으면 바로 법률 검색으로 갑니다. 아래 카드로 도구를 열고, 최근 사용 목록에서 다시 엽니다. ☆을 누르면 즐겨찾기에 남습니다.",
-    "검사매뉴얼" to "검사품질관리 매뉴얼이 앱 안에 들어 있습니다(암호화 보관). 위쪽 '목차'로 절을 고르거나 찾기 칸에 낱말을 넣어 쪽을 찾습니다. 두 손가락으로 벌리면 확대됩니다.",
-    "검사관련 서식" to "서식 번호(예: 3-8)나 이름으로 찾아 원본 모양을 봅니다. '한글 앱으로 작성'을 누르면 서식 원본을 한컴오피스 앱에서 열어 그대로 작성할 수 있습니다.",
+    "검사품질관리 매뉴얼" to "검사품질관리 매뉴얼이 앱 안에 들어 있습니다(암호화 보관). 위쪽 '목차'로 절을 고르거나 찾기 칸에 낱말을 넣어 쪽을 찾습니다. 두 손가락으로 벌리면 확대됩니다.",
+    "검사관련 서식" to "서식 번호(예: 3-8)나 이름으로 찾아 원본 모양을 봅니다. '문서 앱으로 작성'을 누르면 서식 원본을 설치된 한글 호환 앱(한컴오피스, 이음오피스, 폴라리스 오피스 등)에서 골라 열어 그대로 작성할 수 있습니다.",
     "법률 검색" to "'자본시장법 제54조'처럼 찾으면 조문을 항·호·목 단위로 보여 주고, 각 항·호·목을 위임 근거로 삼은 시행령·시행규칙·감독규정·세칙을 바로 아래에 붙여 보여 줍니다. 위임이 아니라 인용만 한 법규는 '인용된 법규'에 따로 모읍니다. 기준일을 넣으면 그날 시행 조문을 봅니다.",
     "기업 개황" to "회사 이름이나 종목코드로 찾아 기업개황·최대주주·재무·공시를 보고, 한글(HWPX)·PDF로 저장해 공유합니다. ☆로 관심기업에 넣으면 새 공시 건수를 알려 줍니다.",
     "양정기준" to "임원·직원·기관을 고르고 위반 정도와 고의·과실로 기본 양정을 정한 뒤 가중·감경 단계를 더해 결과와 사전통지 표기를 봅니다. 검사·제재규정과 시행세칙 원문도 함께 봅니다.",
@@ -72,7 +72,7 @@ fun AboutScreen(update: UpdateModel, onMessage: (String) -> Unit) {
                 Column {
                     Text(APP_NAME, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     Text("버전 ${BuildInfo.VERSION} · Android", style = MaterialTheme.typography.bodyMedium)
-                    Text("검사매뉴얼·서식 · 법률 검색 · 기업 개황 · 양정·과징금·과태료 · 할 일", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("검사품질관리 매뉴얼·서식 · 법률 검색 · 기업 개황 · 양정·과징금·과태료 · 할 일", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             LabelValue("만든이", AUTHOR, 72)
@@ -121,7 +121,7 @@ fun AboutScreen(update: UpdateModel, onMessage: (String) -> Unit) {
 
         AppCard(Modifier.fillMaxWidth()) {
             CardTitle("자료 출처와 유의 사항")
-            Text("법령 정보: 국가법령정보센터 Open API(법제처) · 공시 정보: OpenDART(금융감독원) · 검사매뉴얼·서식: 금융감독원 내부 자료(앱 안에 암호화 보관, 외부 유출 금지). 이 앱은 업무 보조 도구이며, 법령 해석과 제재 양정의 최종 판단은 원문과 내부 기준에 따릅니다. 입력한 자료는 이 기기에만 저장됩니다.",
+            Text("법령 정보: 국가법령정보센터 Open API(법제처) · 공시 정보: OpenDART(금융감독원) · 검사품질관리 매뉴얼·서식: 금융감독원 내부 자료(앱 안에 암호화 보관, 외부 유출 금지). 이 앱은 업무 보조 도구이며, 법령 해석과 제재 양정의 최종 판단은 원문과 내부 기준에 따릅니다. 입력한 자료는 이 기기에만 저장됩니다.",
                 style = MaterialTheme.typography.bodySmall)
         }
     }

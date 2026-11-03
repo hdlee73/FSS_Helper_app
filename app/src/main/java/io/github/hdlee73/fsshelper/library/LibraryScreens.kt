@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -51,9 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.hdlee73.fsshelper.ui.EmptyState
-import io.github.hdlee73.fsshelper.ui.Pill
 import io.github.hdlee73.fsshelper.ui.SearchField
-import io.github.hdlee73.fsshelper.ui.Tone
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -106,7 +105,7 @@ private fun LibraryGate(store: LibraryStore, content: @Composable () -> Unit) {
     }
 }
 
-// ───────────────────────────── 검사매뉴얼
+// ───────────────────────────── 검사품질관리 매뉴얼
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -180,7 +179,7 @@ fun FormsScreen(store: LibraryStore, ui: LibraryUi, actions: LibraryActions) = L
                 Text(listOf(r.basis, r.target.takeIf { it.isNotBlank() }?.let { "받는 곳 $it" }.orEmpty()).filter { it.isNotBlank() }.joinToString(" · ").ifBlank { "검사관련 서식" },
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Button(onClick = { actions.writeForm(no) }, enabled = lib.canWriteForms) {
-                    Icon(Icons.Outlined.EditNote, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text("한글 앱으로 작성")
+                    Icon(Icons.Outlined.EditNote, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text("문서 앱으로 작성")
                 }
             }
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -212,7 +211,7 @@ fun FormsScreen(store: LibraryStore, ui: LibraryUi, actions: LibraryActions) = L
                 val g = r.group.ifBlank { "제${r.no.substringBefore('-')}장" }
                 if (g != lastGroup) {
                     lastGroup = g
-                    item(key = "g:$g:${r.no}") { Text(g, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 6.dp, top = 12.dp, bottom = 4.dp)) }
+                    item(key = "g:$g:${r.no}") { GroupHeader(g, forms.count { (it.group.ifBlank { "제${it.no.substringBefore('-')}장" }) == g }) }
                 }
                 item(key = r.no) { FormRow(r) { ui.formNo = r.no; actions.openedForm(r.no) } }
             }
@@ -221,6 +220,19 @@ fun FormsScreen(store: LibraryStore, ui: LibraryUi, actions: LibraryActions) = L
 }
 
 // ───────────────────────────── 공통
+
+/** 서식 묶음 제목(상시감시·검사준비·현장검사 등): 크고 굵게, 왼쪽 남색 띠 */
+@Composable
+private fun GroupHeader(title: String, count: Int) {
+    Row(
+        Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 6.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(Modifier.width(4.dp).height(20.dp).clip(RoundedCornerShape(2.dp)).background(MaterialTheme.colorScheme.primary))
+        Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+        Text("$count", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
 
 @Composable
 private fun ListRow(title: String, sub: String, twoLine: Boolean = false, onClick: () -> Unit) {
@@ -241,7 +253,7 @@ private fun FormRow(r: FormRef, onClick: () -> Unit) {
         modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp).clip(MaterialTheme.shapes.small).clickable(onClick = onClick),
     ) {
         Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Pill(r.no, Tone.ACCENT)
+            Text(r.no, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.width(40.dp))
             Column(Modifier.weight(1f)) {
                 Text(r.name.ifBlank { "제${r.no}호 서식" }, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 if (r.basis.isNotBlank()) Text(r.basis, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)

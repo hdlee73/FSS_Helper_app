@@ -19,7 +19,7 @@ import io.github.hdlee73.fsshelper.data.ThemeMode
 
 /**
  * 시안 3 네이비 공문: 짙은 남색 머리띠, 옅은 회색 바탕, 모서리 4~6dp의 흰 카드(그림자 없음).
- * 도구마다 고유 색(아이콘)을 두고 나머지는 무채색으로 차분하게 둔다.
+ * 색은 남색 한 가지로 줄이고 나머지는 무채색으로 차분하게 둔다.
  */
 private val Light = lightColorScheme(
     primary = Color(0xFF1B2B4B),
@@ -34,7 +34,7 @@ private val Light = lightColorScheme(
     onTertiary = Color.White,
     tertiaryContainer = Color(0xFFFFF1D6),
     onTertiaryContainer = Color(0xFF6B4300),
-    background = Color(0xFFEEF0F4),
+    background = Color(0xFFF3F4F7),
     onBackground = Color(0xFF1A2233),
     surface = Color(0xFFFFFFFF),
     onSurface = Color(0xFF1A2233),
@@ -46,7 +46,7 @@ private val Light = lightColorScheme(
     surfaceContainerLowest = Color(0xFFFFFFFF),
     surfaceContainerHighest = Color(0xFFDDE1EA),
     outline = Color(0xFF9AA2B2),
-    outlineVariant = Color(0xFFDCE0E8),
+    outlineVariant = Color(0xFFE3E6EC),
     error = Color(0xFFC0392B),
     onError = Color.White,
     errorContainer = Color(0xFFFBE4E1),

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-검사매뉴얼·검사관련 서식을 앱에 넣을 암호화 묶음(secure/assets/library.bin)으로 만든다.
+검사품질관리 매뉴얼·검사관련 서식을 앱에 넣을 암호화 묶음(secure/assets/library.bin)으로 만든다.
 
   python3 tools/pack_library.py --manual-pdf manual.pdf --forms-pdf forms.pdf \
       --forms-hwp forms.hwp --key <LIBRARY_KEY(base64 32바이트)>
